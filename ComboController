@@ -1,0 +1,60 @@
+extends Node
+class_name ComboController
+
+@export var animation_player: AnimationPlayer
+@export var cancel_rules: CancelRules
+
+var can_cancel := false
+var next_anim_start_frame := 0
+
+# =========================
+# === CALLED FROM ANIMS ===
+# =========================
+
+func enable_cancel():
+	can_cancel = true
+
+func disable_cancel():
+	can_cancel = false
+
+func set_next_anim_start_frame(frame: int):
+	next_anim_start_frame = frame
+
+# =========================
+# === PUBLIC INTERFACE ===
+# =========================
+
+func try_play(next_anim: StringName) -> bool:
+	var current_anim := animation_player.current_animation
+
+	if current_anim == "":
+		_play_from_frame(next_anim)
+		return true
+
+	if not can_cancel:
+		return false
+
+	if not cancel_rules.can_cancel(current_anim, next_anim):
+		return false
+
+	_play_from_frame(next_anim)
+	return true
+
+# =========================
+# === INTERNAL ============
+# =========================
+
+func _play_from_frame(anim_name: StringName):
+	var anim := animation_player.get_animation(anim_name)
+	if anim == null:
+		return
+
+	var fps := anim.step > 0.0 ? 1.0 / anim.step : 60.0
+	var time := next_anim_start_frame / fps
+
+	animation_player.play(anim_name)
+	animation_player.seek(time, true)
+
+	# reset
+	can_cancel = false
+	next_anim_start_frame = 0
