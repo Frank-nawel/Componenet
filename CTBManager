@@ -1,0 +1,48 @@
+extends Node
+class_name CTBManager
+
+@export var actores: Array[Node] = []
+
+var actor_en_turno: Node = null
+var tiempo_congelado: bool = false
+
+func _process(delta: float) -> void:
+	if tiempo_congelado:
+		return
+
+	if actor_en_turno:
+		return
+
+	avanzar_ctb(delta)
+	evaluar_turnos()
+
+# ---------------- CTB ----------------
+
+func avanzar_ctb(delta: float) -> void:
+	for actor in actores:
+		if actor.en_turno:
+			continue
+
+		actor.ctb += actor.velocidad_ctb * delta
+		actor.ctb = min(actor.ctb, actor.ctb_max)
+
+func evaluar_turnos() -> void:
+	for actor in actores:
+		if actor.ctb >= actor.ctb_max:
+			iniciar_turno(actor)
+			break
+
+func iniciar_turno(actor: Node) -> void:
+	actor_en_turno = actor
+	tiempo_congelado = true
+
+	actor.entrar_en_turno()
+
+# ---------------- FIN TURNO ----------
+
+func notificar_fin_turno(actor: Node) -> void:
+	if actor != actor_en_turno:
+		return
+
+	actor_en_turno = null
+	tiempo_congelado = false
