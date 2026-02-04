@@ -1,0 +1,34 @@
+extends Node
+class_name AttackResolver
+
+@export var combo_controller: ComboController
+
+## Define qué animación corresponde a cada tipo
+@export var attack_map := {
+	"unarmed": {
+		"low": "low_1",
+		"middle": "middle_1",
+		"high": "high_1"
+	},
+	"spear": {
+		"low": "spear_low_1",
+		"middle": "spear_middle_1",
+		"high": "spear_high_1"
+	}
+}
+
+var current_weapon := "unarmed"
+
+func set_weapon(weapon_id: StringName):
+	current_weapon = weapon_id
+
+func attack(attack_type: StringName):
+	if not attack_map.has(current_weapon):
+		return
+
+	var weapon_attacks := attack_map[current_weapon]
+	if not weapon_attacks.has(attack_type):
+		return
+
+	var anim_name: StringName = weapon_attacks[attack_type]
+	combo_controller.try_play(anim_name)
