@@ -1,0 +1,67 @@
+extends Node
+class_name HexManager
+
+@export var hex_size: float = 64.0
+
+const HEX_DIRECTIONS := [
+	Vector2i(1, 0),    # 0
+	Vector2i(1, -1),   # 1
+	Vector2i(0, -1),   # 2
+	Vector2i(-1, 0),   # 3
+	Vector2i(-1, 1),   # 4
+	Vector2i(0, 1)     # 5
+]
+
+## hex_coord -> [6 bools]
+var hex_sides := {}
+
+# -----------------------------
+# INICIALIZAR HEX
+# -----------------------------
+func ensure_hex(hex: Vector2i) -> void:
+	if not hex_sides.has(hex):
+		hex_sides[hex] = [false, false, false, false, false, false]
+
+# -----------------------------
+# ¿LADO LIBRE?
+# -----------------------------
+func is_side_free(hex: Vector2i, side: int) -> bool:
+	ensure_hex(hex)
+	return not hex_sides[hex][side]
+
+# -----------------------------
+# OCUPAR / LIBERAR
+# -----------------------------
+func occupy_side(hex: Vector2i, side: int) -> void:
+	ensure_hex(hex)
+	hex_sides[hex][side] = true
+
+func free_side(hex: Vector2i, side: int) -> void:
+	if hex_sides.has(hex):
+		hex_sides[hex][side] = false
+
+# -----------------------------
+# MUNDO → HEX
+# -----------------------------
+func world_to_hex(pos: Vector2) -> Vector2i:
+	var q = (sqrt(3)/3 * pos.x - 1.0/3 * pos.y) / hex_size
+	var r = (2.0/3 * pos.y) / hex_size
+	return axial_round(Vector2(q, r))
+
+func axial_round(frac: Vector2) -> Vector2i:
+	var x = frac.x
+	var z = frac.y
+	var y = -x - z
+
+	var rx = round(x)
+	var ry = round(y)
+	var rz = round(z)
+
+	if abs(rx - x) > abs(ry - y) and abs(rx - x) > abs(rz - z):
+		rx = -ry - rz
+	elif abs(ry - y) > abs(rz - z):
+		ry = -rx - rz
+	else:
+		rz = -rx - ry
+
+	return Vector2i(int(rx), int(rz))
