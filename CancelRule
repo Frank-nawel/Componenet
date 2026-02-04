@@ -1,0 +1,15 @@
+extends Node
+class_name CancelRules
+
+## Diccionario:
+## "anim_actual": ["anim_posible_1", "anim_posible_2"]
+@export var rules := {
+	"low_1": ["middle_2"],
+	"middle_2": ["high_3"],
+	"high_3": []
+}
+
+func can_cancel(from_anim: StringName, to_anim: StringName) -> bool:
+	if not rules.has(from_anim):
+		return false
+	return to_anim in rules[from_anim]
