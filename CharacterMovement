@@ -1,0 +1,108 @@
+extends CharacterBody2D
+class_name TurnoJugadorCTB2D
+
+# ---------------- CTB ----------------
+@export var velocidad_ctb: float = 10.0
+@export var ctb_max: float = 100.0
+var ctb: float = 0.0
+var en_turno: bool = false
+var esperando_comando: bool = false
+
+# ------------- MOVIMIENTO -------------
+@export var velocidad_movimiento: float = 180.0
+@export var tiempo_movimiento_maximo: float = 3.0
+var tiempo_movimiento: float = 0.0
+
+# ------------- ACCIONES ---------------
+@export var acciones_extra_max: int = 1
+var acciones_extra: int = 0
+
+# ------------- UI ---------------------
+@export var barra_ctb: ProgressBar
+
+# -------------------------------------
+
+func _process(delta: float) -> void:
+	if not en_turno:
+		cargar_ctb(delta)
+	else:
+		actualizar_movimiento(delta)
+
+	actualizar_barras()
+
+# ----------- CTB ----------------------
+
+func cargar_ctb(delta: float) -> void:
+	ctb += velocidad_ctb * delta
+	if ctb >= ctb_max:
+		ctb = ctb_max
+		entrar_en_turno()
+
+func entrar_en_turno() -> void:
+	en_turno = true
+	esperando_comando = true
+	tiempo_movimiento = 0.0
+	acciones_extra = acciones_extra_max
+	print("▶ Turno iniciado | Acciones:", acciones_extra)
+
+# ----------- MOVIMIENTO ---------------
+
+func actualizar_movimiento(delta: float) -> void:
+	if tiempo_movimiento >= tiempo_movimiento_maximo:
+		velocity = Vector2.ZERO
+		return
+
+	var h := Input.get_axis("ui_left", "ui_right")
+	var v := Input.get_axis("ui_up", "ui_down")
+
+	var direccion := Vector2(h, v)
+	if direccion.length() > 0:
+		tiempo_movimiento += delta
+		velocity = direccion.normalized() * velocidad_movimiento
+		move_and_slide()
+	else:
+		velocity = Vector2.ZERO
+
+# ----------- ACCIONES -----------------
+
+func seleccionar_accion(accion: String) -> void:
+	if not en_turno or not esperando_comando:
+		return
+
+	print("Acción:", accion)
+
+	match accion:
+		"Atacar":
+			ejecutar_accion(100, true)
+		"HabilidadRapida":
+			ejecutar_accion(40, false)
+		"HabilidadLenta":
+			ejecutar_accion(140, true)
+		"Defender":
+			ejecutar_accion(80, true)
+		_:
+			push_warning("Acción no reconocida")
+			return
+
+func ejecutar_accion(costo_ctb: float, termina_turno: bool) -> void:
+	ctb = max(ctb - costo_ctb, 0)
+	acciones_extra -= 1
+
+	print("CTB restante:", ctb, "| Acciones restantes:", acciones_extra)
+
+	if termina_turno or acciones_extra <= 0:
+		fin_del_turno()
+
+# ----------- FIN TURNO ----------------
+
+func fin_del_turno() -> void:
+	en_turno = false
+	esperando_comando = false
+	velocity = Vector2.ZERO
+	print("⏹ Fin del turno")
+
+# ----------- UI -----------------------
+
+func actualizar_barras() -> void:
+	if barra_ctb:
+		barra_ctb.value = (ctb / ctb_max) * barra_ctb.max_value
