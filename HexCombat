@@ -1,0 +1,47 @@
+extends Node
+class_name HexCombat
+
+@export var hex_manager: HexManager
+
+# -----------------------------
+# CALCULAR LADO SEGÚN DIRECCIÓN
+# -----------------------------
+func get_side_from_direction(dir: Vector2) -> int:
+	var angle = rad_to_deg(dir.angle())
+	angle = fmod(angle + 360.0, 360.0)
+
+	# 360 / 6 = 60°
+	return int(round(angle / 60.0)) % 6
+
+# -----------------------------
+# ¿PUEDE OCUPAR ESE LADO?
+# -----------------------------
+func can_occupy_side(
+	hex: Vector2i,
+	side: int
+) -> bool:
+	return hex_manager.is_side_free(hex, side)
+
+# -----------------------------
+# ENTRAR A HEX (MOVIMIENTO LIBRE)
+# -----------------------------
+func try_enter_hex(
+	unit,
+	world_dir: Vector2
+) -> bool:
+	var hex = hex_manager.world_to_hex(unit.global_position)
+	var side = get_side_from_direction(world_dir)
+
+	if not can_occupy_side(hex, side):
+		return false
+
+	# liberar slot anterior
+	if unit.current_hex != null:
+		hex_manager.free_side(unit.current_hex, unit.current_side)
+
+	# ocupar nuevo
+	unit.current_hex = hex
+	unit.current_side = side
+	hex_manager.occupy_side(hex, side)
+
+	return true
